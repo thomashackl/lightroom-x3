@@ -6,7 +6,7 @@ Summary information for X3 photo gallery plug-in
 --------------------------------------------------------------------------------
 
 Thomas Hackl
- Copyright 2019 Adobe Systems Incorporated
+ Copyright 2019 Thomas Hackl
  All Rights Reserved.
 
 This plug-in provides photo upload via FTP to a remote server and generating
@@ -16,8 +16,8 @@ the correct page.json with metadata needed for X3 photo gallery.
 
 return {
 
-	LrSdkVersion = 3.0,
-	LrSdkMinimumVersion = 1.3, -- minimum SDK version required by this plug-in
+	LrSdkVersion = 9.0,
+	LrSdkMinimumVersion = 5.0, -- minimum SDK version required by this plug-in
 
 	LrToolkitIdentifier = 'name.thomas-hackl.lightroom.export.x3',
 
