@@ -17,17 +17,17 @@ the correct page.json with metadata needed for X3 photo gallery.
 return {
 
 	LrSdkVersion = 9.0,
-	LrSdkMinimumVersion = 5.0, -- minimum SDK version required by this plug-in
+	LrSdkMinimumVersion = 3.0, -- minimum SDK version required by this plug-in
 
 	LrToolkitIdentifier = 'name.thomas-hackl.lightroom.export.x3',
 
-	LrPluginName = LOC "$$$/FTPUpload/PluginName=X3 Photo Gallery",
+	LrPluginName = 'X3 Photo Gallery',
 
 	LrExportServiceProvider = {
-		title = "X3 Photo Gallery",
+		title = 'X3 Photo Gallery',
 		file = 'X3GalleryServiceProvider.lua',
 	},
 
-	VERSION = { major=1, minor=0, revision=0, build="201912231547", },
+	VERSION = { major=1, minor=0, revision=0, build='0', },
 
 }
