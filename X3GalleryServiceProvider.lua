@@ -83,10 +83,36 @@ function exportServiceProvider.startDialog( propertyTable )
 
 end
 
-function exportServiceProvider.viewForCollectionSettings( f, publishSettings, info )
-  local bind = LrView.bind
+function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
 
-	local collectionSettings = assert( info.collectionSettings )
+  local bind = LrView.bind
+  local share = LrView.share
+  local LrFtp = import 'LrFtp'
+
+	return {
+		{
+			title = LOC '$$$/X3GalleryPlugin/Labels/X3Installation=X3 installation',
+
+      synopsis = LOC '$$$/X3GalleryPlugin/Labels/Synopsis=Server where photos should be uploaded per FTP',
+
+			f:row {
+				f:static_text {
+					title = LOC '$$$/X3GalleryPlugin/Labels/FtpDestination=FTP connection',
+					alignment = 'right',
+					width = share 'labelWidth'
+				},
+
+				LrFtp.makeFtpPresetPopup {
+					factory = f,
+					properties = propertyTable,
+					valueBinding = 'ftpPreset',
+					itemsBinding = 'items',
+					fill_horizontal = 1,
+  			}
+  		}
+
+  	}
+	}
 
 end
 
