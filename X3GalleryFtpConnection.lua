@@ -16,6 +16,7 @@ local LrFtp = import 'LrFtp'
 local LrErrors = import 'LrErrors'
 local LrPathUtils = import 'LrPathUtils'
 local LrFileUtils = import 'LrFileUtils'
+local LrDialogs = import 'LrDialogs'
 local LrLogger = import 'LrLogger'
 
 local myLogger = LrLogger( 'X3' )
@@ -25,13 +26,73 @@ X3GalleryFtpConnection = {}
 
 --------------------------------------------------------------------------------
 
+-- Try to establish an (S)FTP connection according to the given preset
+
+function X3GalleryFtpConnection.connectToFtp( ftpPreset )
+  local ftpInstance = nil
+
+  if not LrFtp.queryForPasswordIfNeeded( ftpPreset ) then
+    return
+  end
+
+  ftpInstance = LrFtp.create( ftpPreset, true )
+
+  if not ftpInstance then
+
+    -- This really shouldn't ever happen.
+    LrErrors.throwUserError( LOC '$$$/X3GalleryPlugin/Errors/InvalidFtpParameters=The specified FTP preset is incomplete and cannot be used.' )
+
+  end
+
+  return ftpInstance
+
+end
+
+-- Create a directory with the given name on the FTP server
+
+function X3GalleryFtpConnection.mkdir( ftpInstance, name )
+
+  local success = false
+
+  local exists = ftpInstance:exists( name )
+
+  if exists == false then
+    success = ftpInstance:makeDirectory( name )
+
+    if not success then
+
+      -- This is a possible situation if permissions don't allow us to create directories.
+
+      LrErrors.throwUserError( LOC '$$$/X3GalleryPlugin/Errors/CannotMakeDirectoryForUpload=Cannot upload because Lightroom could not create the destination directory.' )
+    end
+
+  elseif exists == 'file' then
+
+    -- Unlikely, due to the ambiguous way paths for directories get tossed around.
+
+    LrErrors.throwUserError( LOC '$$$/X3GalleryPlugin/Errors/UploadDestinationIsAFile=Cannot upload to a destination that already exists as a file.' )
+  elseif exists == 'directory' then
+
+    -- Excellent, it exists, do nothing here.
+
+  else
+
+    -- Not sure if this would every really happen.
+
+    LrErrors.throwUserError( LOC '$$$/X3GalleryPlugin/Errors/CannotCheckForDestination=Unable to upload because Lightroom cannot ascertain if the target destination exists.' )
+  end
+
+  return success
+
+end
+
 function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 
 	-- Make a local reference to the export parameters.
 
 	local exportSession = exportContext.exportSession
 	local exportParams = exportContext.propertyTable
-	local ftpPreset = exportParams.ftpPreset
+  local publishedCollectionInfo = exportContext.publishedCollectionInfo
 
 	-- Set progress title.
 
@@ -39,70 +100,22 @@ function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 
 	local progressScope = exportContext:configureProgress {
 						title = nPhotos > 1
-							   and LOC( "$$$/X3GalleryFtpConnection/Upload/Progress=Uploading ^1 photos via Ftp", nPhotos )
-							   or LOC "$$$/X3GalleryFtpConnection/Upload/Progress/One=Uploading one photo via Ftp",
+							   and LOC( '$$$/X3GalleryPlugin/UploadProgress=Uploading ^1 photos via Ftp', nPhotos )
+							   or LOC '$$$/X3GalleryPlugin/UploadProgressOne=Uploading one photo via Ftp',
 					}
 
+  myLogger:info('Publishing collection ' .. publishedCollectionInfo.name)
+
 	-- Create an FTP connection.
+  local ftpInstance = X3GalleryFtpConnection.connectToFtp( exportContext.propertyTable.ftpPreset )
 
-	if not LrFtp.queryForPasswordIfNeeded( ftpPreset ) then
-		return
-	end
-
-	local ftpInstance = LrFtp.create( ftpPreset, true )
-
-	if not ftpInstance then
-
-		-- This really shouldn't ever happen.
-
-		LrErrors.throwUserError( LOC "$$$/X3GalleryFtpConnection/Upload/Errors/InvalidFtpParameters=The specified FTP preset is incomplete and cannot be used." )
-	end
+  if ftpInstance then
+    myLogger:info('Connected to (S)FTP.')
+  end
 
 	-- Ensure target directory exists.
 
-	local index = 0
-	while true do
-
-		local subPath = string.sub( exportParams.fullPath, 0, index )
-		ftpInstance.path = subPath
-
-		local exists = ftpInstance:exists( '' )
-
-		if exists == false then
-			local success = ftpInstance:makeDirectory( '' )
-
-			if not success then
-
-				-- This is a possible situation if permissions don't allow us to create directories.
-
-				LrErrors.throwUserError( "$$$/X3GalleryFtpConnection/Upload/Errors/CannotMakeDirectoryForUpload=Cannot upload because Lightroom could not create the destination directory." )
-			end
-
-		elseif exists == 'file' then
-
-			-- Unlikely, due to the ambiguous way paths for directories get tossed around.
-
-			LrErrors.throwUserError( LOC "$$$/X3GalleryFtpConnection/Upload/Errors/UploadDestinationIsAFile=Cannot upload to a destination that already exists as a file." )
-		elseif exists == 'directory' then
-
-			-- Excellent, it exists, do nothing here.
-
-		else
-
-			-- Not sure if this would every really happen.
-
-			LrErrors.throwUserError( LOC "$$$/X3GalleryFtpConnection/Upload/Errors/CannotCheckForDestination=Unable to upload because Lightroom cannot ascertain if the target destination exists." )
-		end
-
-		if index == nil then
-			break
-		end
-
-		index = string.find( exportParams.fullPath, "/", index + 1 )
-
-	end
-
-	ftpInstance.path = exportParams.fullPath
+  X3GalleryFtpConnection.mkdir( ftpInstance, publishedCollectionInfo.name )
 
 	-- Iterate through photo renditions.
 
@@ -121,8 +134,9 @@ function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 		if success then
 
 			local filename = LrPathUtils.leafName( pathOrMessage )
+      local fullPath = publishedCollectionInfo.name .. '/' .. filename
 
-			local success = ftpInstance:putFile( pathOrMessage, filename )
+			local success = ftpInstance:putFile( pathOrMessage, fullPath )
 
 			if not success then
 
@@ -131,6 +145,11 @@ function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 				-- we don't have permission to write to that directory, etc....
 
 				table.insert( failures, filename )
+
+      else
+
+        rendition:recordPublishedPhotoId( fullPath )
+
 			end
 
 			-- When done with photo, delete temp file. There is a cleanup step that happens later,
@@ -147,11 +166,11 @@ function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 	if #failures > 0 then
 		local message
 		if #failures == 1 then
-			message = LOC "$$$/X3GalleryFtpConnection/Upload/Errors/OneFileFailed=1 file failed to upload correctly."
+			message = LOC '$$$/X3GalleryPlugin/Errors/OneFileFailed=1 file failed to upload correctly.'
 		else
-			message = LOC ( "$$$/X3GalleryFtpConnection/Upload/Errors/SomeFileFailed=^1 files failed to upload correctly.", #failures )
+			message = LOC ( '$$$/X3GalleryPlugin/Errors/SomeFileFailed=^1 files failed to upload correctly.', #failures )
 		end
-		LrDialogs.message( message, table.concat( failures, "\n" ) )
+		LrDialogs.message( message, table.concat( failures, '\n' ) )
 	end
 
 end

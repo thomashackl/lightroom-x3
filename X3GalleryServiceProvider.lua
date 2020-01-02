@@ -38,9 +38,7 @@ exportServiceProvider.hidePrintResolution = true
 exportServiceProvider.canExportVideo = true
 
 exportServiceProvider.exportPresetFields = {
-  { key = 'ftpPreset', default = nil },
-  { key = 'longSideWidth', default = 1600 },
-  { key = 'fullPath', default = '' }
+  { key = 'ftpPreset', default = nil }
 }
 
 local function updateExportStatus( propertyTable )
@@ -52,7 +50,7 @@ local function updateExportStatus( propertyTable )
 		-- (It only goes through once.)
 
 		if propertyTable.ftpPreset == nil then
-			message = 'Select or Create an FTP preset'
+			message = LOC '$$$/X3GalleryPlugin/Status/NoFtpPreset=Select or Create an FTP preset'
 			break
 		end
 
@@ -85,51 +83,10 @@ function exportServiceProvider.startDialog( propertyTable )
 
 end
 
-function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
-
+function exportServiceProvider.viewForCollectionSettings( f, publishSettings, info )
   local bind = LrView.bind
-  local share = LrView.share
-  local LrFtp = import 'LrFtp'
 
-	return {
-		{
-			title = 'X3 installation',
-
-      synopsis = 'Server where photos should be uploaded per FTP',
-
-			f:row {
-				f:static_text {
-					title = 'Destination:',
-					alignment = 'right',
-					width = share 'labelWidth'
-				},
-
-				LrFtp.makeFtpPresetPopup {
-					factory = f,
-					properties = propertyTable,
-					valueBinding = 'ftpPreset',
-					itemsBinding = 'items',
-					fill_horizontal = 1,
-  			}
-  		},
-
-      f:row {
-        f:static_text {
-          title = 'Image size:',
-          alignment = 'right',
-          width = share 'labelWidth'
-        },
-
-        f:edit_field {
-          value = bind 'longSideWidth',
-          min = 800,
-          max = 2160,
-          precision = 0,
-          increment = 10
-        }
-      }
-  	}
-	}
+	local collectionSettings = assert( info.collectionSettings )
 
 end
 
