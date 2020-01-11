@@ -17,10 +17,6 @@ local LrErrors = import 'LrErrors'
 local LrPathUtils = import 'LrPathUtils'
 local LrFileUtils = import 'LrFileUtils'
 local LrDialogs = import 'LrDialogs'
-local LrLogger = import 'LrLogger'
-
-local myLogger = LrLogger( 'X3' )
-myLogger:enable( 'print' )
 
 X3GalleryFtpConnection = {}
 
@@ -99,19 +95,13 @@ function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 	local nPhotos = exportSession:countRenditions()
 
 	local progressScope = exportContext:configureProgress {
-						title = nPhotos > 1
-							   and LOC( '$$$/X3GalleryPlugin/UploadProgress=Uploading ^1 photos via Ftp', nPhotos )
-							   or LOC '$$$/X3GalleryPlugin/UploadProgressOne=Uploading one photo via Ftp',
-					}
-
-  myLogger:info('Publishing collection ' .. publishedCollectionInfo.name)
+		title = nPhotos > 1
+			   and LOC( '$$$/X3GalleryPlugin/UploadProgress=Uploading ^1 photos via Ftp', nPhotos )
+			   or LOC '$$$/X3GalleryPlugin/UploadProgressOne=Uploading one photo via Ftp',
+	}
 
 	-- Create an FTP connection.
   local ftpInstance = X3GalleryFtpConnection.connectToFtp( exportContext.propertyTable.ftpPreset )
-
-  if ftpInstance then
-    myLogger:info('Connected to (S)FTP.')
-  end
 
 	-- Ensure target directory exists.
 
