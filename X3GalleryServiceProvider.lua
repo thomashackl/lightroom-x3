@@ -18,6 +18,7 @@ local LrDialogs = import 'LrDialogs'
 
 -- X3 Photo Gallery plugin
 require 'X3GalleryFtpConnection'
+require 'X3GalleryJSON'
 
 --============================================================================--
 
@@ -154,15 +155,6 @@ function exportServiceProvider.viewForCollectionSettings( f, publishSettings, in
   -- Get photo filenames.
   local photoNames = getPhotoNames( publishedCollection )
 
-  -- Photo filename selection, but with an entry 'no photo' on top
-  local noHeader = LOC '$$$/X3GalleryPlugin/Labels/NoPicture=-- no picture --'
-  local photoNamesWithNoSelection = photoNames
-  table.insert(photoNamesWithNoSelection, 1, noHeader)
-
-  if not collectionSettings.album_header then
-    collectionSettings.album_header = noHeader
-  end
-
   return f:view {
     bind_to_object = info,
     spacing = f.dialog_spacing(),
@@ -230,7 +222,7 @@ function exportServiceProvider.viewForCollectionSettings( f, publishSettings, in
           bind_to_object = info.collectionSettings,
           immediate = true,
           value = bind 'album_header',
-          items = photoNamesWithNoSelection
+          items = photoNames
         }
       }
     }
@@ -239,7 +231,38 @@ function exportServiceProvider.viewForCollectionSettings( f, publishSettings, in
 end
 
 function exportServiceProvider.processRenderedPhotos( functionContext, exportContext )
-  X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
+  --X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
+
+  local collectionInfo = exportContext.publishedCollectionInfo
+  local collection = exportContext.publishedCollection
+  local albumConfig = {}
+
+  for index, value in pairs( collectionInfo ) do
+    LrDialogs.message( index, value )
+  end
+
+--  if collectionSettings.album_name then
+--    albumConfig['title'] = collectionSettings.album_name
+--    albumConfig['label'] = collectionSettings.album_name
+--  end
+--  if collectionSettings.description then
+--    albumConfig['description'] = collectionSettings.album_description
+--  end
+--  if collectionSettings.album_date then
+--    albumConfig['date'] = collectionSettings.album_date
+--  end
+--  if collectionSettings.album_cover then
+--    albumConfig['image'] = collectionSettings.album_cover
+--  end
+--  if collectionSettings.album_header then
+--    albumConfig['plugins'] = {
+--      image_background = {
+--        enabled = 'true',
+--        src = collectionSettings.album_header
+--      }
+--    }
+--  end
+
 end
 
 return exportServiceProvider

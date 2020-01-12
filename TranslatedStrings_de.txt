@@ -9,7 +9,6 @@
 "$$$/X3GalleryPlugin/Labels/AlbumDate=Datum (JJJJ-MM-TT)"
 "$$$/X3GalleryPlugin/Labels/AlbumDescription=Beschreibung"
 "$$$/X3GalleryPlugin/Labels/AlbumHeader=Großes Titelbild"
-"$$$/X3GalleryPlugin/Labels/NoPicture=-- kein Foto --"
 "$$$/X3GalleryPlugin/Labels/FtpDestination=(S)FTP-Verbindung"
 "$$$/X3GalleryPlugin/Labels/NoFtpPreset=(S)FTP-Vorlage erstellen oder auswählen"
 "$$$/X3GalleryPlugin/Labels/Synopsis=Server, auf den die Bilder per (S)FTP hochgeladen werden sollen"
