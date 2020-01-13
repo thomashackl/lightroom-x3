@@ -78,22 +78,25 @@ end
 -- This function is asnychronous.
 local function getPhotoNames( collection )
   local photoNames = {}
-  completed = false
 
-  LrTasks.startAsyncTask(function()
-    local photos = collection:getPhotos()
+  if collection then
+    completed = false
 
-    -- Fetch metadata (filename) for each photo
-    for i, photo in ipairs( photos ) do
-      local fileName = photo:getFormattedMetadata( 'fileName' )
-      table.insert(photoNames, fileName)
+    LrTasks.startAsyncTask(function()
+      local photos = collection:getPhotos()
+
+      -- Fetch metadata (filename) for each photo
+      for i, photo in ipairs( photos ) do
+        local fileName = photo:getFormattedMetadata( 'fileName' )
+        table.insert(photoNames, fileName)
+      end
+
+      completed = true
+    end)
+
+    while not completed do
+      LrTasks.sleep(0.25)
     end
-
-    completed = true
-  end)
-
-  while not completed do
-    LrTasks.sleep(0.25)
   end
 
   return photoNames
@@ -235,33 +238,43 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 
   local collectionInfo = exportContext.publishedCollectionInfo
   local collection = exportContext.publishedCollection
-  local albumConfig = {}
 
-  for index, value in pairs( collectionInfo ) do
-    LrDialogs.message( index, value )
+  if not collectionInfo.publishedCollection then
+    collectionInfo.publishedCollection = exportContext.publishedCollection
   end
 
---  if collectionSettings.album_name then
---    albumConfig['title'] = collectionSettings.album_name
---    albumConfig['label'] = collectionSettings.album_name
---  end
---  if collectionSettings.description then
---    albumConfig['description'] = collectionSettings.album_description
---  end
---  if collectionSettings.album_date then
---    albumConfig['date'] = collectionSettings.album_date
---  end
---  if collectionSettings.album_cover then
---    albumConfig['image'] = collectionSettings.album_cover
---  end
---  if collectionSettings.album_header then
---    albumConfig['plugins'] = {
---      image_background = {
---        enabled = 'true',
---        src = collectionSettings.album_header
---      }
---    }
---  end
+  LrTasks.startAsyncTask(function()
+    local albumConfig = {}
+    local summary = collectionInfo.publishedCollection:getCollectionInfoSummary()
+    local settings = summary.collectionSettings
+
+    if settings.album_name then
+      albumConfig['title'] = settings.album_name
+      albumConfig['label'] = settings.album_name
+    end
+    if settings.description then
+      albumConfig['description'] = settings.album_description
+    end
+    if settings.album_date then
+      albumConfig['date'] = settings.album_date
+    end
+    if settings.album_cover then
+      albumConfig['image'] = settings.album_cover
+    end
+    if settings.album_header then
+      albumConfig['plugins'] = {
+        image_background = {
+          enabled = 'true',
+          src = settings.album_header
+        }
+      }
+    end
+
+    for index, value in pairs( albumConfig ) do
+      LrDialogs.message( index, value )
+    end
+  end)
+
 
 end
 
