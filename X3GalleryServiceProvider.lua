@@ -270,9 +270,7 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
       }
     end
 
-    for index, value in pairs( albumConfig ) do
-      LrDialogs.message( index, value )
-    end
+    LrDialogs.message( 'Album config:', X3GalleryJSON.encode(albumConfig) )
   end)
 
 

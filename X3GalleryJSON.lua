@@ -19,20 +19,41 @@ X3GalleryJSON = {}
 --------------------------------------------------------------------------------
 
 -- Encode a value into a JSON string
-function X3GalleryJSON.encode( value, indent )
+function X3GalleryJSON.encode( data, indent )
+  if not indent then
+    indent = ''
+  end
+
   local encoded = ''
 
-  if type( value ) == 'table' then
+  if type( data ) == 'table' then
 
-    for index, entry in ipairs(value) do
+    encoded = encoded..indent..'{\n'
 
-      encoded = encoded..indent..'{"'..index..'":\n'..indent..'  {\n'..X3GalleryJSON.encode( entry, indent..'  ' )..'\n'..indent..'}\n'..indent..'}'
-
+    -- There seems to be no other way to count table entries than to
+    -- iterate over the whole table and use a counter variable :/
+    local counter = 0
+    for index, value in pairs( data ) do
+      counter = counter + 1
     end
+
+    local secondCounter = 1
+    for index, value in pairs( data ) do
+      encoded = encoded..indent..'  "'..index..'": '..X3GalleryJSON.encode(value, indent..'  ')
+
+      if secondCounter < counter then
+        encoded = encoded..','
+      end
+      encoded = encoded..'\n'
+
+      secondCounter = secondCounter + 1
+    end
+
+    encoded = encoded..indent..'}'
 
   else
 
-    encoded = indent..value
+    encoded = '"'..data..'"'
 
   end
 
