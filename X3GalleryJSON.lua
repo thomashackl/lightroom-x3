@@ -39,12 +39,12 @@ function X3GalleryJSON.encode( data, indent )
 
     local secondCounter = 1
     for index, value in pairs( data ) do
-      encoded = encoded..indent..'  "'..index..'": '..X3GalleryJSON.encode(value, indent..'  ')
+      encoded = encoded .. indent .. '  "' .. index .. '": ' .. X3GalleryJSON.encode( value, indent .. '  ' )
 
       if secondCounter < counter then
-        encoded = encoded..','
+        encoded = encoded .. ','
       end
-      encoded = encoded..'\n'
+      encoded = encoded .. '\n'
 
       secondCounter = secondCounter + 1
     end
@@ -53,7 +53,7 @@ function X3GalleryJSON.encode( data, indent )
 
   else
 
-    encoded = '"'..data..'"'
+    encoded = '"' .. data .. '"'
 
   end
 

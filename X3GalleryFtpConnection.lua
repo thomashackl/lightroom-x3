@@ -82,7 +82,7 @@ function X3GalleryFtpConnection.mkdir( ftpInstance, name )
 
 end
 
-function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
+function X3GalleryFtpConnection.uploadPhotos( ftpInstance, exportContext )
 
 	-- Make a local reference to the export parameters.
 
@@ -100,11 +100,7 @@ function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 			   or LOC '$$$/X3GalleryPlugin/UploadProgressOne=Uploading one photo via Ftp',
 	}
 
-	-- Create an FTP connection.
-  local ftpInstance = X3GalleryFtpConnection.connectToFtp( exportContext.propertyTable.ftpPreset )
-
 	-- Ensure target directory exists.
-
   X3GalleryFtpConnection.mkdir( ftpInstance, publishedCollectionInfo.name )
 
 	-- Iterate through photo renditions.
@@ -151,8 +147,6 @@ function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 
 	end
 
-	ftpInstance:disconnect()
-
 	if #failures > 0 then
 		local message
 		if #failures == 1 then
@@ -162,5 +156,32 @@ function X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
 		end
 		LrDialogs.message( message, table.concat( failures, '\n' ) )
 	end
+
+end
+
+function X3GalleryFtpConnection.uploadJSONFile( ftpInstance, folderName, config )
+
+  local filename = os.tmpname()
+  local file = io.open( filename, 'w' )
+
+  if file then
+    file:write( X3GalleryJSON.encode( config ) )
+    file:close()
+  else
+    LrErrors.throwUserError( LOC '$$$/X3GalleryPlugin/Errors/OpenFileError=Unable to open file for album config:' .. filename )
+  end
+
+  local fullPath = folderName .. '/page.json'
+  local uploadSuccess = ftpInstance:putFile( filename, fullPath )
+
+  if uploadSuccess then
+
+    LrFileUtils.delete( filename )
+
+  else
+
+    LrErrors.throwUserError( LOC '$$$/X3GalleryPlugin/Errors/UploadFileError=Unable to upload file for album config: ' .. filename )
+
+  end
 
 end

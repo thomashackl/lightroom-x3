@@ -189,7 +189,7 @@ function exportServiceProvider.viewForCollectionSettings( f, publishSettings, in
           width_in_chars = 60,
           height_in_lines = 4
         }
-      };
+      },
 
       f:row {
         f:static_text {
@@ -234,7 +234,11 @@ function exportServiceProvider.viewForCollectionSettings( f, publishSettings, in
 end
 
 function exportServiceProvider.processRenderedPhotos( functionContext, exportContext )
-  --X3GalleryFtpConnection.uploadPhotos( functionContext, exportContext )
+
+  -- Create an FTP connection.
+  local ftpInstance = X3GalleryFtpConnection.connectToFtp( exportContext.propertyTable.ftpPreset )
+
+  X3GalleryFtpConnection.uploadPhotos( ftpInstance, exportContext )
 
   local collectionInfo = exportContext.publishedCollectionInfo
   local collection = exportContext.publishedCollection
@@ -252,27 +256,29 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
       albumConfig['title'] = settings.album_name
       albumConfig['label'] = settings.album_name
     end
-    if settings.description then
+    if settings.album_description then
       albumConfig['description'] = settings.album_description
     end
     if settings.album_date then
       albumConfig['date'] = settings.album_date
     end
     if settings.album_cover then
-      albumConfig['image'] = settings.album_cover
+      albumConfig['image'] = string.gsub( settings.album_cover, '.NEF', '.jpg' )
     end
     if settings.album_header then
       albumConfig['plugins'] = {
         image_background = {
           enabled = 'true',
-          src = settings.album_header
+          src = string.gsub( settings.album_header, '.NEF', '.jpg' )
         }
       }
     end
 
-    LrDialogs.message( 'Album config:', X3GalleryJSON.encode(albumConfig) )
-  end)
+    X3GalleryFtpConnection.uploadJSONFile( ftpInstance, exportContext.publishedCollectionInfo.name, albumConfig )
 
+    ftpInstance:disconnect()
+
+  end)
 
 end
 
