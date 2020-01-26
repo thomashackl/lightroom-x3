@@ -28,6 +28,6 @@ return {
 		file = 'X3GalleryServiceProvider.lua',
 	},
 
-	VERSION = { major=1, minor=0, revision=8, build=168 },
+	VERSION = { major=1, minor=1, revision=1, build=38 },
 
 }

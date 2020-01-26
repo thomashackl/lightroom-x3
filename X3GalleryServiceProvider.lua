@@ -22,25 +22,28 @@ require 'X3GalleryJSON'
 
 --============================================================================--
 
-local exportServiceProvider = {}
+local publishServiceProvider = {}
 
-exportServiceProvider.supportsIncrementalPublish = true
+-- We support only publish operations and not exporting.
+publishServiceProvider.supportsIncrementalPublish = 'only'
 
-exportServiceProvider.hideSections = { 'exportLocation' }
+-- Location is detemined by FTP path and collection name
+publishServiceProvider.hideSections = { 'exportLocation' }
 
-exportServiceProvider.allowFileFormats = { 'JPEG' }
+-- Publish only JPEG format
+publishServiceProvider.allowFileFormats = { 'JPEG' }
 
-exportServiceProvider.allowColorSpaces = { 'sRGB' }
+publishServiceProvider.allowColorSpaces = { 'sRGB' }
 
-exportServiceProvider.hidePrintResolution = true
+publishServiceProvider.hidePrintResolution = true
 
-exportServiceProvider.canExportVideo = true
+publishServiceProvider.canExportVideo = false
 
-exportServiceProvider.exportPresetFields = {
+publishServiceProvider.exportPresetFields = {
   { key = 'ftpPreset', default = nil }
 }
 
--- Progess bar for export/publish process
+-- Progress bar for export/publish process
 local function updateExportStatus( propertyTable )
 
 	local message = nil
@@ -104,7 +107,7 @@ local function getPhotoNames( collection )
 end
 
 -- Show export/publish settings dialog.
-function exportServiceProvider.startDialog( propertyTable )
+function publishServiceProvider.startDialog( propertyTable )
 
   propertyTable:addObserver( 'items', updateExportStatus )
   propertyTable:addObserver( 'ftpPreset', updateExportStatus )
@@ -114,7 +117,7 @@ function exportServiceProvider.startDialog( propertyTable )
 end
 
 -- Add appropriate config sections to publisher config dialog
-function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
+function publishServiceProvider.sectionsForTopOfDialog( f, propertyTable )
 
   local bind = LrView.bind
   local share = LrView.share
@@ -148,7 +151,7 @@ function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
 end
 
 -- Add custom sections to collection configuration dialog.
-function exportServiceProvider.viewForCollectionSettings( f, publishSettings, info )
+function publishServiceProvider.viewForCollectionSettings( f, publishSettings, info )
   local bind = LrView.bind
   local share = LrView.share
 
@@ -233,7 +236,9 @@ function exportServiceProvider.viewForCollectionSettings( f, publishSettings, in
 
 end
 
-function exportServiceProvider.processRenderedPhotos( functionContext, exportContext )
+-- Collection is published: process the photos, upload and generate
+-- necessary album configuration for X3
+function publishServiceProvider.processRenderedPhotos( functionContext, exportContext )
 
   -- Create an FTP connection.
   local ftpInstance = X3GalleryFtpConnection.connectToFtp( exportContext.propertyTable.ftpPreset )
@@ -282,4 +287,22 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 
 end
 
-return exportServiceProvider
+-- This function is called when photos are deleted from a collection.
+-- We need to delete them remotely, too.
+function publishServiceProvider.deletePhotosFromPublishedCollection( publishSettings, arrayOfPhotoIds, deletedCallback, localCollectionId )
+
+  X3GalleryFtpConnection.deletePhotos( arrayOfPhotoIds )
+
+  for _, id in pairs( photoIds ) do
+    deletedCallback( id )
+  end
+
+end
+
+-- This function is called when a collection is deleted.
+-- All photos and the album config file are removed remotely.
+function publishServiceProvider.deletePublishedCollection( publishSettings, info )
+
+end
+
+return publishServiceProvider

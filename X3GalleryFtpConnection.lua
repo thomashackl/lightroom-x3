@@ -17,6 +17,8 @@ local LrErrors = import 'LrErrors'
 local LrPathUtils = import 'LrPathUtils'
 local LrFileUtils = import 'LrFileUtils'
 local LrDialogs = import 'LrDialogs'
+local LrTasks = import 'LrTasks'
+local LrApplication = import 'LrApplication'
 
 X3GalleryFtpConnection = {}
 
@@ -150,9 +152,9 @@ function X3GalleryFtpConnection.uploadPhotos( ftpInstance, exportContext )
 	if #failures > 0 then
 		local message
 		if #failures == 1 then
-			message = LOC '$$$/X3GalleryPlugin/Errors/OneFileFailed=1 file failed to upload correctly.'
+			message = LOC '$$$/X3GalleryPlugin/Errors/OneFileUploadFailed=1 file failed to upload correctly.'
 		else
-			message = LOC ( '$$$/X3GalleryPlugin/Errors/SomeFileFailed=^1 files failed to upload correctly.', #failures )
+			message = LOC ( '$$$/X3GalleryPlugin/Errors/SomeFileUploadsFailed=^1 files failed to upload correctly.', #failures )
 		end
 		LrDialogs.message( message, table.concat( failures, '\n' ) )
 	end
@@ -183,5 +185,44 @@ function X3GalleryFtpConnection.uploadJSONFile( ftpInstance, folderName, config 
     LrErrors.throwUserError( LOC '$$$/X3GalleryPlugin/Errors/UploadFileError=Unable to upload file for album config: ' .. filename )
 
   end
+
+end
+
+-- Deletes the given photo IDs on the remote server.
+function X3GalleryFtpConnection.deletePhotos( photoIds )
+
+  LrTasks.startAsyncTask(function()
+
+    local catalog = assert ( LrApplication.activeCatalog() )
+    local publishServices = assert (catalog:getPublishServices( _PLUGIN.id ) )
+    local publishService = publishServices[1]
+    local settings = assert( publishService:getPublishSettings() )
+
+    -- Create an FTP connection.
+    local ftpInstance = X3GalleryFtpConnection.connectToFtp( settings.ftpPreset )
+
+    local failures = {}
+
+    for _, id in pairs( photoIds ) do
+      local deleted, error = ftpInstance:removeFile( id )
+
+      if not deleted then
+        table.insert( failures, id )
+      end
+    end
+
+    ftpInstance:disconnect()
+
+    if #failures > 0 then
+  		local message
+  		if #failures == 1 then
+  			message = LOC '$$$/X3GalleryPlugin/Errors/OneFileDeletionFailed=1 file could not be deleted.'
+  		else
+  			message = LOC ( '$$$/X3GalleryPlugin/Errors/SomeFileDeletionsFailed=^1 files could not be deleted.', #failures )
+  		end
+  		LrDialogs.message( message, table.concat( failures, '\n' ) )
+  	end
+
+  end)
 
 end
